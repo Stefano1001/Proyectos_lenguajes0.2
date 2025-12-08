@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios - Sistema Académico</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="menu.html" class="brand">
+        <span>🎓</span> Sistema Académico
+      </a>
+      <div class="user-menu">
+        <div class="user-info">
+          <span id="usuarioNombre" class="user-name">Cargando...</span>
+          <span id="usuarioRol" class="user-role">...</span>
+        </div>
+        <button id="btnLogout" class="btn btn-secondary btn-sm">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container main-content" style="justify-content: flex-start;">
+    <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>Administración de Usuarios</h1>
+        <p>Gestiona los usuarios del sistema, roles y accesos.</p>
+      </div>
+      <a href="menu.html" class="btn btn-secondary">← Volver al Menú</a>
+    </div>
+
+    <div class="grid grid-cols-1 grid-cols-2-sm" style="align-items: start;">
+
+      <!-- Formulario Crear Usuario -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Crear Nuevo Usuario</h3>
+        </div>
+        <form id="formUsuario">
+          <div class="form-group">
+            <label class="form-label">Nombre Completo</label>
+            <input id="nombre_completo" class="form-control" placeholder="Ej: Maria Gonzalez" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Correo Electrónico</label>
+            <input id="correo" type="email" class="form-control" placeholder="correo@ejemplo.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input id="clave" type="password" class="form-control" placeholder="••••••••" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rol</label>
+            <select id="tipo_usuario" class="form-control">
+              <option value="administrador">Administrador</option>
+              <option value="profesor">Profesor</option>
+              <option value="apoderado">Apoderado</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Crear Usuario</button>
+        </form>
+      </div>
+
+      <!-- Lista de Usuarios -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Lista de Usuarios</h3>
+        </div>
+        <div id="usuariosList" style="max-height: 500px; overflow-y: auto;">
+          <p class="text-center" style="padding: 1rem;">Cargando usuarios...</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/usuarios.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.checkSession()) return;
+
+      const user = Auth.getUser();
+      document.getElementById('usuarioNombre').textContent = user.nombre;
+      document.getElementById('usuarioRol').textContent = (user.rol || user.tipo).toUpperCase();
+
+      document.getElementById('btnLogout').addEventListener('click', Auth.logout);
+    });
+  </script>
+</body>
+
+</html>

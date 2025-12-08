@@ -1,0 +1,19 @@
+{
+  "name": "sistema-matricula",
+  "version": "1.0.0",
+  "description": "",
+  "main": "init_db_node.js",
+  "scripts": {
+    "start": "node start-all.js",
+    "test": "node test-crud-completo.js",
+    "init-db": "node init_db_node.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "mysql2": "^3.15.3"
+  }
+}

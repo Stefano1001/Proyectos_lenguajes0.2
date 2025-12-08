@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrículas - Sistema Académico</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="menu.html" class="brand">
+        <span>🎓</span> Sistema Académico
+      </a>
+      <div class="user-menu">
+        <div class="user-info">
+          <span id="usuarioNombre" class="user-name">Cargando...</span>
+          <span id="usuarioRol" class="user-role">...</span>
+        </div>
+        <button id="btnLogout" class="btn btn-secondary btn-sm">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container main-content" style="justify-content: flex-start;">
+    <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>Matrículas</h1>
+        <p>Gestiona tus inscripciones a cursos.</p>
+      </div>
+      <a href="menu.html" class="btn btn-secondary">← Volver al Menú</a>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Mis Cursos Matriculados</h3>
+      </div>
+
+      <div id="lista-matriculas">
+        <p class="text-center" style="padding: 2rem;">Cargando matrículas...</p>
+      </div>
+
+      <div class="mt-4 text-center">
+        <button class="btn btn-primary" onclick="window.location.href='cursos.html'">
+          + Matricular Nuevo Curso
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.checkSession()) return;
+
+      const user = Auth.getUser();
+      document.getElementById('usuarioNombre').textContent = user.nombre;
+      document.getElementById('usuarioRol').textContent = (user.rol || user.tipo).toUpperCase();
+
+      document.getElementById('btnLogout').addEventListener('click', Auth.logout);
+
+      // Load Matriculas
+      const lista = document.getElementById('lista-matriculas');
+      try {
+        // FIXED: Changed alumno_id to id_alumno to match backend controller
+        const res = await fetch(`http://localhost:3002/api/matriculas?id_alumno=${user.id}`);
+        const data = await res.json();
+
+        if (data.length === 0) {
+          lista.innerHTML = `
+                        <div class="text-center" style="padding: 2rem; color: var(--text-muted);">
+                            <p>No estás matriculado en ningún curso actualmente.</p>
+                        </div>
+                    `;
+        } else {
+          // Render list (Implementation depends on API response structure)
+          // Placeholder for now
+          lista.innerHTML = `
+                        <div class="alert alert-success">
+                            Tienes ${data.length} cursos matriculados.
+                        </div>
+                        <!-- Add table or list here -->
+                    `;
+        }
+      } catch (err) {
+        lista.innerHTML = `
+                    <div class="alert alert-error">
+                        Error al cargar matrículas. Intenta nuevamente.
+                    </div>
+                `;
+      }
+    });
+  </script>
+</body>
+
+</html>

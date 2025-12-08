@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sistema Académico</title>
+    <link rel="stylesheet" href="../css/estilos.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="main-content">
+        <div class="container" style="max-width: 800px;">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h2 style="color: var(--primary);">Crear Cuenta de Alumno</h2>
+                    <p>Completa tus datos para registrarte en el sistema</p>
+                </div>
+
+                <div id="alerta"></div>
+
+                <form id="formRegistro" class="grid grid-cols-1 grid-cols-2-sm">
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre Completo</label>
+                        <input id="nombre_completo" class="form-control" placeholder="Juan Pérez" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">DNI</label>
+                        <input id="dni" class="form-control" placeholder="12345678" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ciclo Actual</label>
+                        <select id="ciclo" class="form-control" required>
+                            <option value="" disabled selected>Selecciona tu ciclo</option>
+                            <option value="1">Ciclo 1</option>
+                            <option value="2">Ciclo 2</option>
+                            <option value="3">Ciclo 3</option>
+                            <option value="4">Ciclo 4</option>
+                            <option value="5">Ciclo 5</option>
+                            <option value="6">Ciclo 6</option>
+                            <option value="7">Ciclo 7</option>
+                            <option value="8">Ciclo 8</option>
+                            <option value="9">Ciclo 9</option>
+                            <option value="10">Ciclo 10</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Género</label>
+                        <select id="genero" class="form-control" required>
+                            <option value="" disabled selected>Selecciona tu género</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Correo Electrónico</label>
+                        <input type="email" id="correo" class="form-control" placeholder="correo@ejemplo.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" id="clave" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <div
+                        style="grid-column: 1 / -1; margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                        <a href="../index.html" class="btn btn-secondary">Cancelar</a>
+                        <button class="btn btn-primary" type="submit">Registrarse</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (Auth.getUser()) {
+            window.location.href = 'menu.html';
+        }
+
+        document.getElementById('formRegistro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                nombre_completo: document.getElementById('nombre_completo').value,
+                dni: document.getElementById('dni').value,
+                ciclo: Number(document.getElementById('ciclo').value),
+                genero: document.getElementById('genero').value,
+                correo: document.getElementById('correo').value,
+                clave: document.getElementById('clave').value
+            };
+
+            const alerta = document.getElementById('alerta');
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            const originalText = btnSubmit.textContent;
+
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Registrando...';
+            alerta.innerHTML = '';
+
+            try {
+                const res = await fetch('http://localhost:3001/api/registro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.exito) {
+                    alerta.innerHTML = `<div class="alert alert-success">Registro exitoso. Redirigiendo al login...</div>`;
+                    setTimeout(() => window.location.href = '../index.html', 2000);
+                } else {
+                    alerta.innerHTML = `<div class="alert alert-error">${data.mensaje}</div>`;
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = originalText;
+                }
+            } catch (err) {
+                alerta.innerHTML = `<div class="alert alert-error">Error de conexión</div>`;
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = originalText;
+            }
+        });
+    </script>
+</body>
+
+</html>

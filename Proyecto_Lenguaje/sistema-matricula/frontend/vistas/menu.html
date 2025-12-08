@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Académico</title>
+    <link rel="stylesheet" href="../css/estilos.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <div class="brand">
+                <span>🎓</span> Sistema Académico
+            </div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <span id="usuarioNombre" class="user-name">Cargando...</span>
+                    <span id="usuarioRol" class="user-role">...</span>
+                </div>
+                <button id="btnLogout" class="btn btn-secondary btn-sm">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container main-content" style="justify-content: flex-start;">
+        <div class="mb-4">
+            <h1>Panel de Control</h1>
+            <p>Bienvenido al sistema de gestión académica. Selecciona una opción para continuar.</p>
+        </div>
+
+        <div class="grid grid-cols-1 grid-cols-2-sm grid-cols-3-md grid-cols-4-lg">
+
+            <!-- Card: Usuarios (Admin Only) -->
+            <a href="usuarios.html" id="card-usuarios" class="card-link hidden">
+                <div class="card" style="height: 100%;">
+                    <div class="card-header">
+                        <h3 style="color: var(--primary);">👥 Usuarios</h3>
+                    </div>
+                    <p>Administrar usuarios, roles y permisos del sistema.</p>
+                </div>
+            </a>
+
+            <!-- Card: Matrículas -->
+            <a href="matriculas.html" id="card-matriculas" class="card-link">
+                <div class="card" style="height: 100%;">
+                    <div class="card-header">
+                        <h3 style="color: var(--primary);">📝 Matrículas</h3>
+                    </div>
+                    <p id="desc-matriculas">Gestionar inscripciones y asignación de cursos.</p>
+                </div>
+            </a>
+
+            <!-- Card: Cursos -->
+            <a href="cursos.html" id="card-cursos" class="card-link">
+                <div class="card" style="height: 100%;">
+                    <div class="card-header">
+                        <h3 style="color: var(--primary);">📚 Cursos</h3>
+                    </div>
+                    <p id="desc-cursos">Ver y gestionar el catálogo de cursos disponibles.</p>
+                </div>
+            </a>
+
+            <!-- Card: Pagos -->
+            <a href="pagos.html" id="card-pagos" class="card-link">
+                <div class="card" style="height: 100%;">
+                    <div class="card-header">
+                        <h3 style="color: var(--primary);">💳 Pagos</h3>
+                    </div>
+                    <p id="desc-pagos">Registro y control de pagos y pensiones.</p>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Check Session
+            if (!Auth.checkSession()) return;
+
+            // 2. Load User Info
+            const user = Auth.getUser();
+            document.getElementById('usuarioNombre').textContent = user.nombre || 'Usuario';
+
+            const rol = Auth.getRole();
+            document.getElementById('usuarioRol').textContent = rol.toUpperCase();
+
+            // 3. Role Based UI
+            const cardUsuarios = document.getElementById('card-usuarios');
+            const descMatriculas = document.getElementById('desc-matriculas');
+            const descCursos = document.getElementById('desc-cursos');
+            const descPagos = document.getElementById('desc-pagos');
+
+            if (rol === 'admin' || rol === 'administrador') {
+                // Admin View
+                cardUsuarios.classList.remove('hidden');
+            } else {
+                // Student View
+                cardUsuarios.classList.add('hidden'); // Ensure hidden
+
+                // Customize text for students
+                descMatriculas.textContent = 'Ver mi matrícula y cursos inscritos.';
+                descCursos.textContent = 'Ver cursos disponibles para tu ciclo.';
+                descPagos.textContent = 'Consultar estado de mis pagos.';
+            }
+
+            // 4. Logout Handler
+            document.getElementById('btnLogout').addEventListener('click', () => {
+                Auth.logout();
+            });
+        });
+    </script>
+</body>
+
+</html>

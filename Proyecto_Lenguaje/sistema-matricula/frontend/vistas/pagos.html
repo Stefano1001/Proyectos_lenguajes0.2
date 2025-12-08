@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagos - Sistema Académico</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-content">
+      <a href="menu.html" class="brand">
+        <span>🎓</span> Sistema Académico
+      </a>
+      <div class="user-menu">
+        <div class="user-info">
+          <span id="usuarioNombre" class="user-name">Cargando...</span>
+          <span id="usuarioRol" class="user-role">...</span>
+        </div>
+        <button id="btnLogout" class="btn btn-secondary btn-sm">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container main-content" style="justify-content: flex-start;">
+    <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>Gestión de Pagos</h1>
+        <p>Consulta y registra pagos de pensiones y matrículas.</p>
+      </div>
+      <a href="menu.html" class="btn btn-secondary">← Volver al Menú</a>
+    </div>
+
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+      <div class="card-header">
+        <h3>Consultar Pagos</h3>
+      </div>
+
+      <form id="formBusqueda" class="form-group" style="display: flex; gap: 1rem;">
+        <input id="termino" class="form-control" placeholder="Ingresa DNI del alumno" required>
+        <button class="btn btn-primary" type="submit">Buscar</button>
+      </form>
+
+      <div id="resultados" class="mt-4">
+        <div
+          style="text-align: center; color: var(--text-muted); padding: 2rem; border: 2px dashed var(--border); border-radius: var(--radius-md);">
+          🔍 Realiza una búsqueda para ver los resultados
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/pagos.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.checkSession()) return;
+
+      const user = Auth.getUser();
+      document.getElementById('usuarioNombre').textContent = user.nombre;
+      document.getElementById('usuarioRol').textContent = (user.rol || user.tipo).toUpperCase();
+
+      document.getElementById('btnLogout').addEventListener('click', Auth.logout);
+    });
+  </script>
+</body>
+
+</html>
