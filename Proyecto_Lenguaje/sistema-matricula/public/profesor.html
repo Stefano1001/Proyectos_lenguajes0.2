@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docente | UTP</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="dashboard-nav" style="border-top: 4px solid var(--secondary);">
+        <div class="nav-brand">
+            <i class="ri-briefcase-4-fill" style="color: var(--secondary); font-size: 1.5rem;"></i>
+            Portal Docente
+        </div>
+        <button onclick="logout()" class="btn btn-outline"><i class="ri-logout-box-r-line"></i> Salir</button>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside>
+            <div class="sidebar-profile">
+                <div class="profile-avatar" style="background: var(--secondary);">
+                    <i class="ri-user-tie-line"></i>
+                </div>
+                <h3 id="nombreProfesor" class="brand-font">Profesor</h3>
+                <p>Docente TC</p>
+            </div>
+        </aside>
+
+        <main>
+            <h2 class="brand-font">Mis Secciones Asignadas</h2>
+            <div id="listaSecciones" class="course-grid" style="margin-top: 20px;">
+                <!-- Secciones se inyectan aquí -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SERVICES = {
+            cursos: 'http://localhost:3002/api/cursos',
+            auth: 'http://localhost:3001/api/auth' // Si necesitamos validar sesión
+        };
+
+        const profesor = { id: 1, nombre: 'Dr. Roberto Carlos' }; // MOCK: En producción vendría del Login
+
+        document.getElementById('nombreProfesor').textContent = profesor.nombre;
+
+        async function cargarSecciones() {
+            try {
+                // Simulamos llamada a API (en el futuro se implementará endpoint real)
+                // const res = await fetch(`${SERVICES.cursos}/profesor/${profesor.id}`);
+
+                // MOCK DATA POR AHORA
+                const secciones = [
+                    { curso: 'Ingeniería de Software', seccion: '101', horario: 'LUN 08:00-10:00' },
+                    { curso: 'Base de Datos II', seccion: '304', horario: 'MAR 14:00-16:00' }
+                ];
+
+                const html = secciones.map(s => `
+                    <div class="card">
+                        <h4>${s.curso}</h4>
+                        <p style="color: var(--secondary-light);">Sección: ${s.seccion}</p>
+                        <hr style="margin: 10px 0; border-color: #eee;">
+                        <div style="font-size: 0.9rem;"><i class="ri-time-line"></i> ${s.horario}</div>
+                        <button class="btn btn-primary" style="width:100%; margin-top:15px; background: var(--secondary);">
+                            <i class="ri-file-edit-line"></i> Ingresar Notas
+                        </button>
+                    </div>
+                `).join('');
+
+                document.getElementById('listaSecciones').innerHTML = html;
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function logout() { window.location.href = 'index.html'; }
+
+        cargarSecciones();
+    </script>
+</body>
+
+</html>

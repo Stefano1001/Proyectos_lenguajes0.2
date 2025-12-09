@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso Estudiantes | UTP</title>
+  <!-- CSS Moderno -->
+  <link rel="stylesheet" href="css/estilos.css">
+  <!-- Iconos RemixIcon (Vectoriales) -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="login-page">
+    <div class="card login-card">
+
+      <div class="brand-logo">
+        <i class="ri-shield-user-fill brand-icon"></i>
+        <div>
+          <h1 style="font-size: 1.5rem; color: var(--secondary);">Portal UTP</h1>
+          <span style="font-size: 0.85rem; color: var(--secondary-light);">Sistema de Matrícula v2.0</span>
+        </div>
+      </div>
+
+      <div id="mensajeError"
+        style="display: none; padding: 12px; background: #fee2e2; color: #991b1b; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #fecaca;">
+        <i class="ri-error-warning-line" style="vertical-align: middle; margin-right: 5px;"></i>
+        <span id="textoError">Error</span>
+      </div>
+
+      <form id="loginForm">
+        <div class="input-group">
+          <label class="input-label">Correo Institucional</label>
+          <i class="ri-mail-line input-icon"></i>
+          <input type="email" id="correo" class="input-field" placeholder="u2023000@utp.edu.pe" required>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Contraseña</label>
+          <i class="ri-lock-password-line input-icon"></i>
+          <input type="password" id="clave" class="input-field" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          <span>Ingresar al Sistema</span>
+          <i class="ri-arrow-right-line"></i>
+        </button>
+      </form>
+
+      <!-- Panel Apoderado (Restaurado) -->
+      <div id="seleccionAlumno" style="display: none; margin-top: 0; text-align: left;" class="animate-fade-in">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div
+            style="width: 50px; height: 50px; background: #eff6ff; color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 1.5rem;">
+            <i class="ri-parent-line"></i>
+          </div>
+          <h3 style="font-size: 1.1rem; color: var(--secondary); margin-bottom: 4px;">Panel de Apoderado</h3>
+          <p style="font-size: 0.85rem; color: var(--secondary-light);">Consulta el estado de tu estudiante</p>
+        </div>
+
+        <div class="input-group" style="margin-bottom: 16px;">
+          <label class="input-label">Documento de Identidad (DNI)</label>
+          <i class="ri-search-2-line input-icon"></i>
+          <input type="text" id="dniAlumno" class="input-field" placeholder="Ej: 87654321"
+            style="font-size: 1.1rem; letter-spacing: 0.5px;">
+        </div>
+
+        <button onclick="buscarPorDNI()" class="btn btn-primary"
+          style="width: 100%; justify-content: center; background-color: var(--secondary); border: none;">
+          <i class="ri-search-eye-line"></i> Buscar Estudiante
+        </button>
+
+        <div id="loadSpinner" style="display: none; text-align: center; padding: 20px; color: var(--secondary-light);">
+          <i class="ri-loader-4-line ri-spin" style="font-size: 1.5rem;"></i>
+          <p style="font-size: 0.85rem; margin-top: 8px;">Buscando en registros...</p>
+        </div>
+
+        <div id="errorBusqueda"
+          style="display: none; margin-top: 15px; padding: 12px; background: #FEE2E2; color: #991B1B; border-radius: 8px; font-size: 0.9rem; text-align: center;"
+          class="animate-slide-up">
+          <i class="ri-user-unfollow-line"></i> <span id="msgErrorBusqueda">No se encontró estudiante.</span>
+        </div>
+
+        <div id="resultadoAlumno"
+          style="display: none; margin-top: 24px; background: #fff; border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; box-shadow: var(--shadow-md);"
+          class="animate-slide-up">
+
+          <div
+            style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px;">
+            <div
+              style="width: 48px; height: 48px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-radius: 12px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
+              <i class="ri-graduation-cap-line"></i>
+            </div>
+            <div>
+              <h4 id="resNombre" style="margin: 0; font-size: 1rem; color: var(--secondary);">Nombre Alumno</h4>
+              <span id="resCarrera"
+                style="font-size: 0.8rem; color: var(--secondary-light); font-weight: 500;">Carrera</span>
+            </div>
+          </div>
+
+          <div style="background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 0.8rem; color: var(--secondary-light); font-weight: 600;">ESTADO ACTUAL</span>
+              <div id="resBadge" class="badge-premium">Estado</div>
+            </div>
+            <p id="resMensaje" style="font-size: 0.9rem; color: var(--secondary); line-height: 1.4;">
+              Mensaje del sistema...
+            </p>
+          </div>
+
+          <button id="btnAccionAlumno" class="btn" style="width: 100%; justify-content: center; font-weight: 600;">
+            Acción
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top: 32px; text-align: center;">
+        <a href="#" style="color: var(--secondary-light); font-size: 0.85rem; text-decoration: none;">
+          Recuperar Contraseña
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- CONFIGURACIÓN DE MICROSERVICIOS (Service Discovery) ---
+    const SERVICES = {
+      auth: 'http://localhost:3001/api/auth',
+      cursos: 'http://localhost:3002/api/cursos',
+      matricula: 'http://localhost:3003/api/matricula',
+      pagos: 'http://localhost:3004/api/pagos',
+      frontend: 'http://localhost:3000'
+    };
+
+    console.log('🌐 Conectando a Microservicios:', SERVICES);
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const correo = document.getElementById('correo').value;
+      const clave = document.getElementById('clave').value;
+      const errorDiv = document.getElementById('mensajeError');
+      const textoError = document.getElementById('textoError');
+      const btn = e.target.querySelector('button');
+      const form = document.getElementById('loginForm');
+      const seleccionDiv = document.getElementById('seleccionAlumno');
+
+      const originalBtnText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ri-loader-4-line brand-icon" style="font-size: 1.2rem; animation: spin 1s infinite linear;"></i> Verificando...';
+      errorDiv.style.display = 'none';
+
+      try {
+        const res = await fetch(`${SERVICES.auth}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo, clave })
+        });
+        const data = await res.json();
+
+        if (data.exito) {
+          if (data.es_apoderado) {
+            // Apoderado -> Mostrar Buscador DNI
+            form.style.display = 'none';
+            seleccionDiv.style.display = 'block';
+          } else {
+            // Alumno -> Directo al Dashboard
+            localStorage.setItem('usuario', JSON.stringify(data.usuario));
+            localStorage.setItem('estado_matricula', JSON.stringify(data.estado_matricula));
+            window.location.href = 'dashboard.html';
+          }
+        } else {
+          throw new Error(data.mensaje);
+        }
+      } catch (err) {
+        textoError.textContent = err.message || 'Error de conexión';
+        errorDiv.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = originalBtnText;
+      }
+    });
+
+    let alumnoActual = null; // Para guardar contexto de búsqueda
+
+    async function buscarPorDNI() {
+      const dni = document.getElementById('dniAlumno').value;
+      const resDiv = document.getElementById('resultadoAlumno');
+      const spinner = document.getElementById('loadSpinner');
+      const errorDiv = document.getElementById('errorBusqueda');
+
+      // Reset UI
+      resDiv.style.display = 'none';
+      errorDiv.style.display = 'none';
+
+      if (!dni) {
+        document.getElementById('msgErrorBusqueda').textContent = "Por favor, ingresa un número de DNI.";
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      spinner.style.display = 'block';
+
+      try {
+        const res = await fetch(`${SERVICES.auth}/consultar-dni`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dni })
+        });
+        const data = await res.json();
+
+        spinner.style.display = 'none';
+
+        if (data.exito) {
+          alumnoActual = data;
+          mostrarResultado(data);
+          resDiv.style.display = 'block';
+        } else {
+          document.getElementById('msgErrorBusqueda').textContent = data.mensaje || "No se encontró al alumno.";
+          errorDiv.style.display = 'block';
+        }
+      } catch (e) {
+        spinner.style.display = 'none';
+        console.error(e);
+        document.getElementById('msgErrorBusqueda').textContent = "Error de conexión con el servidor.";
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    function mostrarResultado(data) {
+      const { alumno, estado_matricula } = data;
+
+      document.getElementById('resNombre').textContent = alumno.nombre;
+      document.getElementById('resCarrera').textContent = alumno.carrera;
+      document.getElementById('resMensaje').textContent = estado_matricula.mensaje;
+
+      const badge = document.getElementById('resBadge');
+      const btn = document.getElementById('btnAccionAlumno');
+
+      // Limpiar clases previas
+      badge.className = 'badge-premium';
+      btn.className = 'btn';
+      btn.disabled = false; // <<< CORRECCIÓN CRÍTICA: Asegurar que esté habilitado
+
+      // Lógica Visual basada en Estado
+      if (estado_matricula.codigo === 'PAGO_PENDIENTE') {
+        badge.innerHTML = '<i class="ri-error-warning-line"></i> Pendiente de Pago';
+        badge.style.background = '#FEE2E2'; badge.style.color = '#991B1B';
+
+        btn.innerHTML = '<span>Pagar Matrícula</span> <span style="background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:4px;">S/ 500.00</span>';
+        btn.style.background = 'var(--danger)';
+        btn.style.color = 'white';
+        btn.onclick = () => procesarPago(alumno.id);
+
+      } else if (estado_matricula.codigo === 'HABILITADO') {
+        badge.innerHTML = '<i class="ri-checkbox-circle-line"></i> Habilitado';
+        badge.style.background = '#D1FAE5'; badge.style.color = '#065F46';
+
+        btn.innerHTML = 'Ingresar al Portal del Estudiante <i class="ri-arrow-right-line"></i>';
+        btn.style.background = 'var(--success)';
+        btn.style.color = 'white';
+        btn.onclick = () => irAMatricula(alumno.id);
+
+      } else {
+        badge.innerHTML = '<i class="ri-time-line"></i> En Espera';
+        badge.style.background = '#F1F5F9'; badge.style.color = '#64748b';
+
+        btn.innerHTML = '<i class="ri-eye-line"></i> Ver Detalle de Turno';
+        btn.style.background = 'var(--secondary)';
+        btn.style.color = 'white';
+        btn.onclick = () => irAMatricula(alumno.id);
+      }
+    }
+
+    async function procesarPago(idAlumno) {
+      const btn = document.getElementById('btnAccionAlumno');
+      const originalText = btn.innerHTML;
+
+      if (!confirm('¿Confirma realizar el pago de matrícula por S/ 500?')) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Procesando Pago...';
+
+      try {
+        const res = await fetch(`${SERVICES.pagos}/pagar-matricula`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_usuario: idAlumno, monto: 500 })
+        });
+        const data = await res.json();
+
+        if (data.exito) {
+          // Success Feedback
+          btn.style.background = 'var(--success)';
+          btn.innerHTML = '<i class="ri-check-line"></i> ¡Pago Exitoso!';
+
+          // Esperar un poco más para asegurar consistencia en BD y dar feedback visual
+          setTimeout(() => {
+            btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Actualizando estado...';
+            buscarPorDNI();
+          }, 2000);
+        } else {
+          throw new Error(data.mensaje);
+        }
+      } catch (e) {
+        alert("Hubo un problema al procesar el pago. Intente nuevamente.");
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    async function irAMatricula(idAlumno) {
+      // Redirigir al dashboard "como si fuera el alumno"
+      try {
+        const res = await fetch(`${SERVICES.auth}/impersonate/${idAlumno}`);
+        const data = await res.json();
+        if (data.exito) {
+          localStorage.setItem('usuario', JSON.stringify(data.usuario));
+          localStorage.setItem('estado_matricula', JSON.stringify(data.estado_matricula));
+          window.location.href = 'dashboard.html';
+        }
+      } catch (e) {
+        alert('Error de redirección.');
+      }
+    }
+  </script>
+</body>
+
+</html>

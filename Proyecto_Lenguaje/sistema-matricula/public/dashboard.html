@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | UTP</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Navbar Sticky -->
+    <nav class="dashboard-nav">
+        <div class="nav-brand">
+            <i class="ri-shield-user-fill" style="color: var(--primary); font-size: 1.5rem;"></i>
+            Portal UTP
+        </div>
+        <button onclick="logout()" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.85rem;">
+            <i class="ri-logout-box-r-line"></i> Cerrar Sesión
+        </button>
+    </nav>
+
+    <div class="dashboard-container">
+
+        <!-- Sidebar -->
+        <aside>
+            <div class="sidebar-profile">
+                <div class="profile-avatar">
+                    <i class="ri-user-smile-line"></i>
+                </div>
+                <h3 id="nombreUsuario" class="brand-font" style="font-size: 1.1rem; margin-bottom: 4px;">Cargando...
+                </h3>
+                <p id="carreraUsuario" style="font-size: 0.85rem; color: var(--secondary-light); margin-bottom: 2px;">
+                    ...</p>
+                <p id="dniUsuario" style="font-size: 0.8rem; color: #64748b; font-weight: 500;">DNI: ...</p>
+            </div>
+
+            <nav style="display: flex; flex-direction: column;">
+                <a href="#" class="nav-link active" onclick="irInicio(event, this)">
+                    <i class="ri-home-4-line"></i> Inicio
+                </a>
+                <a href="#" class="nav-link" onclick="descargarHorario()">
+                    <i class="ri-calendar-event-line"></i> Mi Horario
+                </a>
+                <a href="#" class="nav-link" onclick="mostrarPagos(event, this)">
+                    <i class="ri-secure-payment-line"></i> Pagos
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="ri-file-list-3-line"></i> Notas
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <h2 class="brand-font" style="margin-bottom: 24px; font-size: 1.5rem;">Resumen Académico</h2>
+
+            <!-- Widget de Estado (Semáforo) -->
+            <div id="tarjetaEstado" class="status-widget">
+                <div id="iconoEstadoBox" class="widget-icon-box">
+                    <i id="iconoEstado" class="ri-loader-4-line"></i>
+                </div>
+                <div style="flex-grow: 1;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 8px;">Estado de Matrícula</h3>
+                    <p id="mensajeEstado" style="color: var(--secondary-light); margin-bottom: 16px;">
+                        Verificando elegibilidad...
+                    </p>
+                    <div id="accionesEstado"></div>
+                </div>
+            </div>
+
+            <!-- Panel de Pagos (Nuevo) -->
+            <div id="panelPagos" style="display: none; animation: fadeIn 0.3s ease;">
+                <h3 class="brand-font" style="margin-bottom: 20px;">Historial de Transacciones</h3>
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Concepto</th>
+                                    <th>Fecha</th>
+                                    <th style="text-align: right;">Monto</th>
+                                    <th style="text-align: center;">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaPagosBody">
+                                <tr>
+                                    <td colspan="4"
+                                        style="padding:40px; text-align:center; color: var(--secondary-light);">
+                                        <i class="ri-loader-4-line ri-2x ri-spin"></i><br>Cargando transacciones...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Cursos -->
+            <div id="panelMatricula" style="display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                    <h3 class="brand-font">Cursos Disponibles</h3>
+                    <span class="course-tag">Ciclo 2024-1</span>
+                </div>
+
+                <div id="listaCursos" class="course-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN DE MICROSERVICIOS (Service Discovery) ---
+        const SERVICES = {
+            auth: 'http://localhost:3001/api/auth',
+            cursos: 'http://localhost:3002/api/cursos',
+            matricula: 'http://localhost:3003/api/matricula',
+            pagos: 'http://localhost:3004/api/pagos',
+            reportes: 'http://localhost:3003/api/reportes'
+        };
+
+        console.log('🌐 Conectando a Microservicios:', SERVICES);
+
+        const usuario = JSON.parse(localStorage.getItem('usuario'));
+        const estado = JSON.parse(localStorage.getItem('estado_matricula'));
+
+        if (!usuario) window.location.href = 'index.html';
+
+        // Llenar datos de usuario
+        document.getElementById('nombreUsuario').textContent = usuario.nombre;
+        document.getElementById('carreraUsuario').textContent = usuario.carrera;
+        document.getElementById('dniUsuario').innerHTML = `<i class="ri-mail-line" style="vertical-align:middle"></i> CORREO: ${usuario.correo || usuario.dni || 'No registrado'}`;
+
+        const widget = document.getElementById('tarjetaEstado');
+        const iconBox = document.getElementById('iconoEstadoBox');
+        const icon = document.getElementById('iconoEstado');
+        const mensaje = document.getElementById('mensajeEstado');
+        const acciones = document.getElementById('accionesEstado');
+        const panelMatricula = document.getElementById('panelMatricula');
+
+        // Configurar UI según estado
+        widget.classList.add(estado.codigo);
+        iconBox.classList.add(estado.codigo);
+
+        const iconos = {
+            'BLOQUEADO': 'ri-prohibited-line',
+            'PAGO_PENDIENTE': 'ri-hand-coin-line',
+            'TURNO_ESPERA': 'ri-time-line',
+            'HABILITADO': 'ri-checkbox-circle-line'
+        };
+
+        icon.className = iconos[estado.codigo] || 'ri-question-line';
+        mensaje.textContent = estado.mensaje;
+
+        // Lógica de Botones Principales (Semáforo)
+        if (estado.codigo === 'PAGO_PENDIENTE') {
+            acciones.innerHTML = `
+                <button onclick="pagarMatricula()" class="btn btn-primary" style="background-color: var(--danger);">
+                    <i class="ri-bank-card-line"></i> Pagar Matrícula (S/ 500)
+                </button>`;
+        } else if (estado.codigo === 'HABILITADO') {
+            acciones.innerHTML = `
+                <button onclick="mostrarCursos()" class="btn btn-primary" style="background-color: var(--success);">
+                    <i class="ri-book-open-line"></i> Iniciar Inscripción
+                </button>`;
+        }
+
+        // --- Funciones Globales ---
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // Navegación
+        function activarLink(element) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            if (element) element.classList.add('active');
+        }
+
+        function ocultarTodo() {
+            document.getElementById('tarjetaEstado').style.display = 'none';
+            document.getElementById('panelMatricula').style.display = 'none';
+            document.getElementById('panelPagos').style.display = 'none';
+        }
+
+        function irInicio(event, element) {
+            if (event) event.preventDefault();
+            activarLink(element);
+            ocultarTodo();
+
+            document.getElementById('tarjetaEstado').style.display = 'flex';
+            if (estado.codigo === 'HABILITADO') {
+                // Si ya estaba habilitado y quiso ir a Inicio, mostramos el panel de cursos si ya los había cargado
+                // O simplemente dejamos el widget. Dejemos el widget y el panel si aplica.
+                document.getElementById('panelMatricula').style.display = 'block';
+            }
+        }
+
+        async function pagarMatricula() {
+            if (!confirm('¿Confirmar pago de S/ 500?')) return;
+            try {
+                const res = await fetch(`${SERVICES.pagos}/pagar-matricula`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_usuario: usuario.id, monto: 500 })
+                });
+                const data = await res.json();
+                if (data.exito) {
+                    alert('¡Pago exitoso!');
+                    // Actualizar estado localmente para feedback inmediato
+                    estado.codigo = 'HABILITADO';
+                    estado.mensaje = 'Pago realizado. Matrícula habilitada.';
+                    localStorage.setItem('estado_matricula', JSON.stringify(estado));
+                    location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error al conectar con Servicio de Pagos (Puerto 3004)');
+            }
+        }
+
+        async function mostrarPagos(event, element) {
+            if (event) event.preventDefault();
+            activarLink(element);
+            ocultarTodo();
+            document.getElementById('panelPagos').style.display = 'block';
+
+            const tbody = document.getElementById('tablaPagosBody');
+
+            try {
+                const res = await fetch(`${SERVICES.pagos}/historial/${usuario.id}`);
+                const data = await res.json();
+
+                if (data.exito && data.datos.length > 0) {
+                    tbody.innerHTML = data.datos.map(p => {
+                        const fecha = new Date(p.fecha);
+                        const fechaStr = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                        return `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                        <i class="ri-file-paper-2-line" style="font-size: 1.2rem;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium" style="color: var(--secondary);">${p.concepto}</div>
+                                        <div class="text-xs text-muted" style="display: flex; align-items: center; gap: 4px;">
+                                            <i class="ri-bank-card-line"></i> Tarjeta **** 1234
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-sm font-medium">${fechaStr}</div>
+                                <div class="text-xs text-muted">09:41 AM</div> 
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="font-semibold" style="font-size: 0.95rem;">S/ ${p.monto.toFixed(2)}</div>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">
+                                    <i class="ri-checkbox-circle-fill" style="font-size: 0.9rem;"></i> Pagado
+                                </span>
+                            </td>
+                        </tr>
+                    `}).join('');
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="padding:40px; text-align:center;">
+                                <div style="color: var(--secondary-light); margin-bottom:10px;">
+                                    <i class="ri-inbox-archive-line" style="font-size: 2rem;"></i>
+                                </div>
+                                <p>No has realizado pagos aún.</p>
+                            </td>
+                        </tr>`;
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="4" style="padding:20px; text-align:center; color: red;">Error al cargar pagos.</td></tr>';
+            }
+        }
+
+        async function mostrarCursos() {
+            // Esta función se llama desde el botón del Widget
+            document.getElementById('panelMatricula').style.display = 'block';
+            document.getElementById('listaCursos').innerHTML = '<p>Cargando oferta académica...</p>';
+
+            try {
+                // 1. Obtener cursos INSCRITOS para saber el estado
+                const resMatricula = await fetch(`${SERVICES.matricula}/${usuario.id}`);
+                const dataMatricula = await resMatricula.json();
+                const inscritos = dataMatricula.datos || []; // Array de { id_curso, id_seccion, nombre_curso, ... }
+
+                // Mapa rápido para buscar si está inscrito por ID de curso
+                const mapaInscritos = {};
+                inscritos.forEach(i => { mapaInscritos[i.id_curso] = i; });
+
+                // 2. Obtener oferta de cursos
+                const res = await fetch(`${SERVICES.cursos}?carrera=${usuario.carrera}&ciclo=${usuario.ciclo}`);
+                const data = await res.json();
+
+                if (data.exito) {
+                    const html = data.datos.map(c => {
+                        const cursoInscrito = mapaInscritos[c.id_curso];
+                        const estaInscrito = !!cursoInscrito;
+
+                        // Renderizado condicional
+                        let botonera = '';
+                        let badgeEstado = '';
+
+                        if (estaInscrito) {
+                            badgeEstado = `<span class="badge badge-success" style="margin-bottom:8px; display:inline-block;"><i class="ri-check-double-line"></i> INSCRITO</span>`;
+                            botonera = `
+                                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:8px; margin-top:12px;">
+                                    <p style="font-size:0.85rem; color:#166534; margin-bottom:8px;">
+                                        Ya estás matriculado en este curso.
+                                    </p>
+                                    <button onclick="quitarCurso(${c.id_curso}, ${cursoInscrito.id_seccion}, '${c.nombre_curso}')" 
+                                        class="btn btn-outline" style="width:100%; justify-content:center; color:#dc2626; border-color:#fca5a5; background:white;">
+                                        <i class="ri-close-circle-line"></i> Quitar Curso
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            botonera = `
+                                <div id="secciones-${c.id_curso}" style="display:none; margin-top:16px; border-top:1px solid #eee; padding-top:16px;"></div>
+                                <button id="btn-ver-${c.id_curso}" onclick="verSecciones(${c.id_curso}, '${c.nombre_curso}')" class="btn btn-outline" style="width: 100%; justify-content: center; margin-top:12px;">
+                                    <i class="ri-eye-line"></i> Ver Secciones
+                                </button>
+                            `;
+                        }
+
+                        return `
+                        <div class="course-card" style="${estaInscrito ? 'border-color: var(--success);' : ''}">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                <span class="course-tag" style="margin:0;">${c.nivel_grado || 'Pregrado'}</span>
+                                <span style="font-weight: 600; color: var(--secondary-light);">${c.creditos} CRD</span>
+                            </div>
+                            ${badgeEstado}
+                            <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${c.nombre_curso}</h4>
+                            <p style="font-size: 0.85rem; color: var(--secondary-light); margin-bottom: 0px;">
+                                ${c.descripcion || 'Curso obligatorio de carrera.'}
+                            </p>
+                            
+                            ${botonera}
+                        </div>
+                    `}).join('');
+                    document.getElementById('listaCursos').innerHTML = html;
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('listaCursos').innerHTML = '<p style="color:red">Error al cargar datos.</p>';
+            }
+        }
+
+        async function quitarCurso(idCurso, idSeccion, nombreCurso) {
+            if (!confirm(`¿Estás seguro de QUITAR el curso: ${nombreCurso}?`)) return;
+
+            try {
+                const res = await fetch(`${SERVICES.matricula}/baja`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_usuario: usuario.id,
+                        id_curso: idCurso,
+                        id_seccion: idSeccion
+                    })
+                });
+                const data = await res.json();
+                if (data.exito) {
+                    alert('Curso retirado.');
+                    mostrarCursos(); // Recargar lista para actualizar estado
+                } else {
+                    alert('Error: ' + data.mensaje);
+                }
+            } catch (e) {
+                alert('No se pudo conectar con el servidor.');
+            }
+        }
+
+        async function verSecciones(idCurso, nombreCurso) {
+            const container = document.getElementById(`secciones-${idCurso}`);
+            const btn = document.getElementById(`btn-ver-${idCurso}`);
+
+            // Si ya está visible, lo ocultamos (toggle)
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                btn.innerHTML = '<i class="ri-eye-line"></i> Ver Secciones';
+                return;
+            }
+
+            btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Cargando...';
+
+            try {
+                const res = await fetch(`${SERVICES.cursos}/${idCurso}/secciones`);
+                const data = await res.json();
+
+                if (data.datos.length > 0) {
+                    container.style.display = 'block';
+                    container.innerHTML = data.datos.map(s => {
+                        // Formatear horario para mostrarlo bonito
+                        const horarioStr = s.horario.map(h => `${h.dia} ${h.inicio}-${h.fin}`).join(', ');
+
+                        return `
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e2e8f0;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                <span style="font-weight:600; font-size:0.9rem;">${s.nombre_seccion}</span>
+                                <span style="font-size:0.8rem; color: #64748b;">Vacantes: ${s.capacidad_maxima - s.alumnos_inscritos}</span>
+                            </div>
+                            <div style="font-size:0.85rem; color: var(--secondary); margin-bottom:8px;">
+                                <i class="ri-time-line" style="vertical-align:text-bottom"></i> ${horarioStr}
+                            </div>
+                            <button onclick="inscribirSeccion(${idCurso}, ${s.id_seccion}, '${nombreCurso}', '${s.nombre_seccion}')" 
+                                class="btn btn-primary" style="width:100%; padding: 8px; font-size:0.9rem;">
+                                Inscribir
+                            </button>
+                        </div>
+                    `}).join('');
+                    btn.style.display = 'none'; // Ocultar botón principal al mostrar secciones
+                } else {
+                    alert('No hay secciones programadas para este curso.');
+                    btn.innerHTML = '<i class="ri-eye-line"></i> Ver Secciones';
+                }
+            } catch (e) {
+                console.error(e);
+                btn.innerHTML = 'Error al cargar';
+            }
+        }
+
+        async function inscribirSeccion(idCurso, idSeccion, nombreCurso, nombreSeccion) {
+            if (!confirm(`¿Confirmar inscripción en ${nombreCurso} - Sección ${nombreSeccion}?`)) return;
+
+            try {
+                // Necesitamos el horario para validarlo en backend (o el backend lo busca, pero srv_matricula espera recibirlo)
+                // Para simplificar, obtenemos de nuevo la info o lo pasamos. 
+                // Mejor: Modificamos srv_matricula para que BUSQUE el horario si no se le envía, pero ahora srv_matricula CONFÍA en el envío.
+                // Como no tengo el objeto horario aquí fácil sin hacer lío de variables, 
+                // haré fetch de la sección específica primero rapidito o lo saco del DOM? 
+                // Lo correcto: El backend debería buscar el horario por security. 
+                // PERO srv_matricula línea 62: const horarioNuevo = horario_seccion; // Debe venir como array
+
+                // Solución rápida: Obtener la sección de nuevo para sacar el horario exacto y enviarlo.
+                const resSecciones = await fetch(`${SERVICES.cursos}/${idCurso}/secciones`);
+                const dataSecciones = await resSecciones.json();
+                const seccion = dataSecciones.datos.find(s => s.id_seccion === idSeccion);
+
+                if (!seccion) return alert('Error: Sección no válida.');
+
+                const res = await fetch(`${SERVICES.matricula}/inscribir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_usuario: usuario.id,
+                        id_curso: idCurso,
+                        id_seccion: idSeccion,
+                        nombre_curso: nombreCurso,
+                        horario_seccion: seccion.horario // Enviamos el JSON de horario
+                    })
+                });
+
+                const data = await res.json();
+                if (data.exito) {
+                    alert('✅ Inscripción Exitosa');
+                    mostrarCursos(); // Recargar para mostrar estado "INSCRITO"
+                } else {
+                    // Mostrar error de validación (CRUCE, VACANTES, ETC)
+                    alert('⛔ ' + data.mensaje);
+                }
+            } catch (e) {
+                alert('Error de conexión.');
+            }
+        }
+
+        function descargarHorario() {
+            window.open(`${SERVICES.reportes}/horario/${usuario.id}`, '_blank');
+        }
+    </script>
+</body>
+
+</html>
